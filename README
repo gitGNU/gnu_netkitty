@@ -1,0 +1,37 @@
+NetKitty README
+--------------------------------------------------------------
+Copyright (c) 2006, 2007, 2008, 2009, 2010
+	      David Martínez Oliveira
+See the end of the file for license conditions.
+
+Description
+-----------
+Do you think Netcat is a really powerful tool?. So I do, but I don't use most of the features of this great tool, and, at the same time I would like to have some other features. That's the reason I wrote Netkitty (nk for friends).
+
+Features and Status
+-------------------
+The main features of NetKitty are:
+
+    * Can establish several TCP and UDP client connections simultaneously
+    * Support of rfcomm Bluetooth connections
+    * Can listen to several ports simultaneously
+    * Hub mode (Poor's Man IM): Anything coming from any connection is forwarded to any other active connections.
+    * Shell mode (Poor's Man telnet): Basic remote shell... really basic
+    * Less than 500 LOC
+    * Do not depends on any extra library, just system calls
+    * Can be compiled into a less than 10K static binary (included in the package)
+.
+This file is part of NetKitty
+
+NetKitty is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+NetKitty is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with NetKitty.  If not, see <http://www.gnu.org/licenses/>.

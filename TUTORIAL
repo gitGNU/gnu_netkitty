@@ -1,0 +1,119 @@
+NetKitty Tutorial
+Copyright (c) 2006, 2007, 2008, 2009, 2010
+              David Martínez Oliveira
+See the end of the file for license conditions.
+================================================================
+Netkitty is a small network tool that complements Netcat. In this brief tutorial we will show how to use the NetKitty  features not avaliable on Netcat.
+
+Basic Usage
+-----------
+The basic usage of NetKitty is really simple. The command syntax is as follows:
+
+nk [-hub] [-shell] [-os] [-client [T|U|B],address,port] [-server [T|U|B],port]
+
+where:
+
+    * -hub: Activates the hub mode (see below).
+    * -shell: Activates the shell mode (see below).
+    * -os: Terminates application when all the clients disconnect.
+    * -client: Configures nk to connect to a remote system.
+    * -server: Configures nk to accept connections from remote systems.
+
+Specific parameters for clients and servers are specified below:
+
+    * Type of communication
+          o T : Uses TCP for connect/accept communications
+          o U : Uses UDP for connect/accept communications
+          o B : Uses Bluetooth rfcom for connect/accept communications
+    * Address. Will take the form of an IP address (x.x.x.x) or a Bluetooth address (XX:XX:XX:XX:XX:XX) if B was specified, where x represents decimal numbers and XX hexadecimal ones.
+    * Port. This is the TCP, UDP communication port or the Bluetooth channel is the B option was used.
+
+In the rest of this text some examples on how to use nk are show.
+
+Instant Messaging. The -hub flag
+--------------------------------
+The -hub flag converts NetKitty in a simple Instant Messaging system. This flag makes nk to resend anything it gets from any link to any other link it is managing.
+
+Let's see how to use it to set up a simple Instant Messaging System with nk.
+
+    * Choose a machine as server and execute the following command:
+
+      nk -hub -server T,10000
+
+    * Now, anyone how wants to chat on-line simply runs:
+
+      nk -client T,remote_ip,10000
+
+      Remember to substitute "remote_ip" for the IP address of the machine running the server side. 
+
+You can connect as many clients as you want to your new IM server.
+
+Poor's Man Telnet
+-----------------
+The -shell flags instructs NetKitty to start an interactive shell (/bin/sh -i), whenever a connection is established. In order to use this feature almost one server port should be defined.
+
+A simple example, providing shell access to a given device either using a normal TCP connection or a bluetooth link:
+
+nk -shell -server T,5000 B,5
+
+From this point on, any connection to TCP port 5000 or any Bluetooth connection through channel 5, will provide a rudimentary shell to any client.
+
+Network Distributor
+-------------------
+You can use NetKitty to distribute a data source to several remote clients in an easy way. We had used this features several times to make a simple one-way client connecting to different servers and sending the same data to each one... without modifying neither the client nor the server.
+
+In order to illustrate our example, a real live example will be taken. Suppose that we have a visual tracking system that send positional information to a simulation engine trough a TCP/IP channel. The simulation engine TCP port will be 10000.
+
+Now, we want to control two different simulation engines from the same optical tracking system, so we use nk for this task. In the machine running the optical tracking system we launch nk with this line:
+
+nk -hub -server T,10000 -client T,ip_server1,10000 T,ip_server2,10000
+
+Now we only need to configure our tracking system to send data to a "virtual" simulation engine running in localhost (127.0.0.1:10000).
+
+Simple backup
+-------------
+NetKitty allows to perform backups in the same way that netcat. As NetKitty allows the server to accept further connections, the -os flags should be used to instruct the server side to finish when the client disconnects.
+
+So, in order to perform a backup, The following commands should be used.
+
+In the machine where the backup will be stored run:
+
+nk -os -server -T,10000 > raw_data.dat
+
+In the machine you want to backup run:
+
+cat whatever | nk -client T,the_ip,10000
+
+That's all.
+
+Bluetooth Connections
+---------------------
+NetKitty supports rfcomm bluetooth connection, providing an additional mechanism to connect different devices. We can seamless mix network and bluetooth devices in our communications using nk.
+
+This example show how to use nk to gather information from different sensor devices. Some of then are equipped with wifi devices, so they can be managed as normal TCP connections, but other uses bluetooth to transmit the date collected. So, this nk command-line will do the job.
+
+nk -server -T,10000 -B,4 > raw_data.dat
+
+With the line above, NetKitty will accept TCP connections to port 10000, and rfcomm bluetooth connection on channel 4.
+
+If you don't want to code all the bluetooth socket stuff in your sensor systems applications, just let nk transmit your data out. Let's suppose that your data application dumps data to stdout and that our server is in Bluetooth address 30:F2:61:CE:B2:A3. Then this line will be useful:
+
+data-app | nk -client B,30:F2:61:CE:B2:A3,4
+
+And we are done. 
+.
+This file is part of NetKitty
+
+NetKitty is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+NetKitty is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with NetKitty.  If not, see <http://www.gnu.org/licenses/>.
+
