@@ -62,7 +62,7 @@ struct sockaddr_rc {
   uint8_t         rc_channel;
 };
 
-#define VERSION         "01.07-RSO"
+#define VERSION         "01.07.1-RSO"
 /* Programa Constants & Macros -----------------------------*/
 #define T_UDP           SOCK_DGRAM
 #define T_TCP           SOCK_STREAM
@@ -207,8 +207,7 @@ int create_initial_socket (char *ip, char *port, int type1, int inout)
   /* XXX: No error check for this example */
   j = add_handler (list, n);
   (*list)[j] = socket (family, type, proto);
-  if ((*list)[j] < 0)
-    perror ("socket(NET):");
+  if ((*list)[j] < 0) perror ("socket(NET):");
   
   if (inout)
     {
@@ -231,7 +230,7 @@ int create_initial_socket (char *ip, char *port, int type1, int inout)
   if (type == T_UDP && !inout) 
     i = connect ((*list)[j], (struct sockaddr*)&server, g_len);
 
-  PDEBUG ("Result: %d\n", i);
+  if (i < 0) {(*list)[j] = -1; *n --;} /* On error discard handler */
   return 0;
 } 
 

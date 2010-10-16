@@ -1,3 +1,8 @@
+Sat Oct 16 08:10:59 CEST 2010
+	* Minor bug fix. When trying to connect to several servers, if one of
+	them fails, the connection to the rest is not properly managed. This
+	update fixes this issue
+
 Mon Apr  5 17:29:27 CEST 2010
 	* This is the first official release as a package... Not too much to
 	say
