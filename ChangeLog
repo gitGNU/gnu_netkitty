@@ -1,3 +1,6 @@
+Fri Oct 22 07:21:57 CEST 2010
+	* Added shot options for command-line argunments (-c, -s and -sh)
+
 Sat Oct 16 08:10:59 CEST 2010
 	* Minor bug fix. When trying to connect to several servers, if one of
 	them fails, the connection to the rest is not properly managed. This

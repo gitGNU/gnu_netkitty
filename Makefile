@@ -18,12 +18,12 @@
 #
 
 DIET_CFLAGS=-falign-functions=0 -fdata-sections -ffunction-sections -Wl,--gc-sections -Os -fno-stack-protector
-CFLAGS=-falign-functions=0 -fdata-sections -ffunction-sections -Wl,--gc-sections -Os -fno-stack-protector
+CFLAGS=-Wall -falign-functions=0 -fdata-sections -ffunction-sections -Wl,--gc-sections -Os -fno-stack-protector
 
 all: nk
 
 nk: nk.c
-	gcc ${CFLAGS} -o $@ $<
+	${CC} ${CFLAGS} -o $@ $<
 	strip -s $@
 
 .PHONY:

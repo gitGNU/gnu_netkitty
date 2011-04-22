@@ -1,6 +1,7 @@
 /* 
 NetKitty: Generic Multi Server
-Copyright (c) 2006, 2007, 2008, 2009, 2010 David Martínez Oliveira
+Copyright (c) 2006, 2007, 2008, 2009, 2010, 2011
+	      David Martínez Oliveira
 
 This file is part of NetKitty
 
@@ -62,7 +63,7 @@ struct sockaddr_rc {
   uint8_t         rc_channel;
 };
 
-#define VERSION         "01.07.1-RSO"
+#define VERSION         "01.07.2-RSO"
 /* Programa Constants & Macros -----------------------------*/
 #define T_UDP           SOCK_DGRAM
 #define T_TCP           SOCK_STREAM
@@ -168,7 +169,7 @@ static int add_handler (int **slist, int *n)
 
 int create_initial_socket (char *ip, char *port, int type1, int inout)
 {
-  int                  j, i, ops = 1;
+  int                  j, i = 0, ops = 1;
   int                  **list, *n;
   struct sockaddr_in   server;
   struct sockaddr_rc   addr;
@@ -204,7 +205,6 @@ int create_initial_socket (char *ip, char *port, int type1, int inout)
       type = type1;
     }
   /* Initialise socket. */
-  /* XXX: No error check for this example */
   j = add_handler (list, n);
   (*list)[j] = socket (family, type, proto);
   if ((*list)[j] < 0) perror ("socket(NET):");
@@ -217,7 +217,7 @@ int create_initial_socket (char *ip, char *port, int type1, int inout)
       /* Set reuse address/port socket option */
       setsockopt ((*list)[j], SOL_SOCKET, SO_REUSEADDR, &ops, sizeof(ops));
       i = bind ((*list)[j], (struct sockaddr *) g_addr, g_len);
-      if (i < 0) perror ("socket:");
+      if (i < 0) perror ("bind:");
     }
 
   if (type == T_TCP || type1 == T_BT) 
@@ -230,14 +230,14 @@ int create_initial_socket (char *ip, char *port, int type1, int inout)
   if (type == T_UDP && !inout) 
     i = connect ((*list)[j], (struct sockaddr*)&server, g_len);
 
-  if (i < 0) {(*list)[j] = -1; *n --;} /* On error discard handler */
+  if (i < 0) {(*list)[j] = -1; (*n)--;} /* On error discard handler */
   return 0;
 } 
 
 int hub_send (int ex_tcp, int ex_udp, char *buffer, int len)
 {
   int    sa_len = sizeof(struct sockaddr_in);
-  int    k,l;
+  int    k;
 
   PDEBUG ("Broadcasting data... %d TCP (ex. %d)  %d UDP (ex. %d)\n", 
 	  n_comm, ex_tcp, n_uclient, ex_udp);
@@ -279,14 +279,14 @@ int main (int argc, char *argv[])
   char               buffer[BUFSIZE], ibuffer[BUFSIZE];
   struct sockaddr_in client;
   socklen_t          sa_len = sizeof(struct sockaddr_in);
-  int                arg_flag, type;
+  int                arg_flag, type = 0;
   char               *aux, *aux1;
   int                shell = 0, hub = 0, one_shot = 0;
 
   if (argc == 1)
     {
       my_print ("NetKitty Version " VERSION "\n");
-      my_print ("(c) 2006,2007,2008,2009,2010. David Martinez Oliveira\n\n");
+      my_print ("(c) 2006,2007,2008,2009,2010,2011. David Martinez Oliveira\n\n");
       my_print ("Usage: nk [-shell] [-hub] [-os] [-client ((T|U|B),(ip|bt),port)+] "
 		"[-server ((T|U|B),port)+]\n\n");
       exit (1);
@@ -307,22 +307,22 @@ int main (int argc, char *argv[])
 	  one_shot = 1;
 	  continue;
 	}
-      if (strncmp (argv[i], "-shell", 6) == 0)
+      if ((strncmp (argv[i], "-shell", 6) == 0) || (strncmp (argv[i], "-sh", 3) == 0))
 	{
 	  write (1, "WARNNING: Running in shell\n", 27);
 	  shell = 1;
 	  continue;
 	}
-      if (strncmp (argv[i], "-client", 7) == 0)
+      if ((strncmp (argv[i], "-client", 7) == 0) || (strncmp (argv[i], "-c", 2) == 0))
 	{
 	  PDEBUG ("** Reading Client information\n");
 	  arg_flag = 1; /* Process client data */
 	  continue;
 	}
-      if (strncmp (argv[i], "-server", 7) == 0)
+      if ((strncmp (argv[i], "-server", 7) == 0) || (strncmp (argv[i], "-s", 2) == 0))
 	{
 	  PDEBUG ("** Reading Server information\n");
-	  arg_flag = 2; /* Process client data */
+	  arg_flag = 2; /* Process server data */
 	  continue;
 	}
       aux = argv[i];
@@ -360,7 +360,7 @@ int main (int argc, char *argv[])
       /* Set File Descriptor Set */
       FD_ZERO(&rfds);
 
-      max = 0;
+      ilen = max = 0;
       PDEBUG ("Building select data %d, %d\n", n_ports, n_comm);
       for (i = 0; i < n_ports; i++)
 	{
@@ -385,7 +385,7 @@ int main (int argc, char *argv[])
       else
 	{
 	  /* Check stdin data */
-	  ilen = 0;
+	  //ilen = 0;
 	  if (FD_ISSET(0, &rfds))
 	    {
 	      PDEBUG ("stdin data available... read %d bytes\n", ilen);
@@ -448,15 +448,14 @@ int main (int argc, char *argv[])
 			  s_comm[j] = 
 			    accept (s_accept[i], (struct sockaddr*) &client, 
 				    &sa_len);
-			  PDEBUG ("Accepting connection for %d channel\n", j);
+			  PDEBUG ("Connection accepted for channel %d\n", j);
 			  if(shell) 
 			    {
 			      procesa (s_comm[j], NULL);
 			      s_comm[j] = -1;
 			    }
 			}
-		      /* Process UDP data */
-		      else 
+		      else /* Process UDP data */
 			{
 			  PDEBUG ("Processing %d UDP port\n", s_accept[i]);
 			  len = recvfrom (s_accept[i], buffer, BUFSIZE, 0, 
