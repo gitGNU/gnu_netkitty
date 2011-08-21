@@ -1,3 +1,7 @@
+Sun Aug 21 08:10:40 CEST 201
+	* Small patch. When in server mode, if stdin is available the data is not
+	  read until some client connects
+
 Fri Oct 22 07:21:57 CEST 2010
 	* Added shot options for command-line argunments (-c, -s and -sh)
 

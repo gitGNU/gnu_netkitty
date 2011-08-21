@@ -63,7 +63,7 @@ struct sockaddr_rc {
   uint8_t         rc_channel;
 };
 
-#define VERSION         "01.07.2-RSO"
+#define VERSION         "01.07.3-RSO"
 /* Programa Constants & Macros -----------------------------*/
 #define T_UDP           SOCK_DGRAM
 #define T_TCP           SOCK_STREAM
@@ -275,7 +275,7 @@ int main (int argc, char *argv[])
   fd_set             rfds;
   struct timeval     tv;
   int                i, max, n_res, len, ilen, j, k, l;
-  int                loop4ever = 1;
+  int                use_sin = 1, loop4ever = 1;
   char               buffer[BUFSIZE], ibuffer[BUFSIZE];
   struct sockaddr_in client;
   socklen_t          sa_len = sizeof(struct sockaddr_in);
@@ -323,6 +323,7 @@ int main (int argc, char *argv[])
 	{
 	  PDEBUG ("** Reading Server information\n");
 	  arg_flag = 2; /* Process server data */
+	  use_sin = 0;
 	  continue;
 	}
       aux = argv[i];
@@ -374,7 +375,7 @@ int main (int argc, char *argv[])
 	    if (s_comm[i] >= max) max = s_comm[i] + 1;
 	  }
       /* Add stdin to rdset and set timeout*/
-      FD_SET(0, &rfds);
+      if (use_sin) FD_SET(0, &rfds);
 
       /* 4 sec Timeout*/
       tv.tv_sec = 4;
@@ -445,7 +446,7 @@ int main (int argc, char *argv[])
 		      if (sport_type[i] == T_TCP)
 			{
 			  j = add_handler (&s_comm, &n_comm);
-			  s_comm[j] = 
+			  use_sin = s_comm[j] = 
 			    accept (s_accept[i], (struct sockaddr*) &client, 
 				    &sa_len);
 			  PDEBUG ("Connection accepted for channel %d\n", j);
