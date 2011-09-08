@@ -120,7 +120,7 @@ int str2ba(const char *str, bdaddr_t *ba) {
 /* Simple print function using write */
 int my_print (char *str) {return write (1, str, strlen (str));}
 
-/* Execute an external file making its stdin/stdout/stderr the actual socket */
+/* Execute an external command its stdin/stdout/stderr the actual socket */
 int procesa ( int s , char *prg )
 {
   pid_t pid ;
@@ -369,7 +369,6 @@ int main (int argc, char *argv[])
 	  if (s_accept[i] >= max) max = s_accept[i] + 1;
 	}
 
-      //for (i = 0; (i < n_comm) && s_comm[i] != -1; i++)
       for (i = 0; i < n_comm; i++)
 	  {
 	    if (s_comm[i] != -1) FD_SET(s_comm[i], &rfds);
@@ -387,7 +386,6 @@ int main (int argc, char *argv[])
       else
 	{
 	  /* Check stdin data */
-	  //ilen = 0;
 	  if (FD_ISSET(0, &rfds))
 	    {
 	      PDEBUG ("stdin data available... read %d bytes\n", ilen);
@@ -419,7 +417,6 @@ int main (int argc, char *argv[])
 			{
 			  PDEBUG ("0 bytes read.... removing socket\n");
 			  s_comm[i] = -1;
-			  //n_comm--;
 			  if (one_shot) return 0; else continue;
 			}
 		      PDEBUG ("Read %d bytes from TCP stream\n", len);
@@ -433,7 +430,6 @@ int main (int argc, char *argv[])
 		      {
 			close (s_comm[i]);
 			s_comm[i] = -1;
-			//n_comm--;
 			if (one_shot && (n_comm <= 0)) return 0;
 		      }
 		}
@@ -476,7 +472,7 @@ int main (int argc, char *argv[])
 			    }
 			  /* Send to each connected socket*/
 			  if (hub) hub_send (-1, l, buffer, len);
-			  //fflush(NULL);
+			  /* fflush(NULL); */
 			}
 		    }
 		  /* Send standard input data to all UDP clients */
