@@ -369,9 +369,10 @@ int main (int argc, char *argv[])
 	  if (s_accept[i] >= max) max = s_accept[i] + 1;
 	}
 
-      for (i = 0; (i < n_comm) && s_comm[i] != -1; i++)
+      //for (i = 0; (i < n_comm) && s_comm[i] != -1; i++)
+      for (i = 0; i < n_comm; i++)
 	  {
-	    FD_SET(s_comm[i], &rfds);
+	    if (s_comm[i] != -1) FD_SET(s_comm[i], &rfds);
 	    if (s_comm[i] >= max) max = s_comm[i] + 1;
 	  }
       /* Add stdin to rdset and set timeout*/
@@ -418,7 +419,7 @@ int main (int argc, char *argv[])
 			{
 			  PDEBUG ("0 bytes read.... removing socket\n");
 			  s_comm[i] = -1;
-			  n_comm--;
+			  //n_comm--;
 			  if (one_shot) return 0; else continue;
 			}
 		      PDEBUG ("Read %d bytes from TCP stream\n", len);
@@ -432,7 +433,7 @@ int main (int argc, char *argv[])
 		      {
 			close (s_comm[i]);
 			s_comm[i] = -1;
-			n_comm--;
+			//n_comm--;
 			if (one_shot && (n_comm <= 0)) return 0;
 		      }
 		}

@@ -1,3 +1,6 @@
+Thu Sep  8 06:38:39 CEST 2011
+	* Try to fix problem managing client reconections
+
 Sun Aug 21 08:10:40 CEST 201
 	* Small patch. When in server mode, if stdin is available the data is not
 	  read until some client connects
