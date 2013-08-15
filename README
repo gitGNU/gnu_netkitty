@@ -1,6 +1,6 @@
 NetKitty README
 --------------------------------------------------------------
-Copyright (c) 2006, 2007, 2008, 2009, 2010
+Copyright (c) 2006, 2007, 2008, 2009, 2010, 2013
 	      David Martínez Oliveira
 See the end of the file for license conditions.
 
@@ -14,6 +14,7 @@ The main features of NetKitty are:
 
     * Can establish several TCP and UDP client connections simultaneously
     * Support of rfcomm Bluetooth connections
+    * Support of standard serial ports
     * Can listen to several ports simultaneously
     * Hub mode (Poor's Man IM): Anything coming from any connection is forwarded to any other active connections.
     * Shell mode (Poor's Man telnet): Basic remote shell... really basic

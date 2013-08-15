@@ -1,0 +1,16 @@
+Source: nk
+Maintainer: David Martinez Oliveira <dmo@paperming-designs.com>
+Section: misc
+Priority: optional
+Standards-Version: 3.9.2
+Build-Depends: debhelper (>= 8)
+
+Package: nk
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: The nk (or netkitty) utility is a strip down version of the well-known
+     netcat application able to act as a TCP/UDP/Bluetooth client or server.
+     Main difference with nc((1)) is its ability to listen and connect to sev‐
+     eral ports simultaneously, featuring a hub mode which broadcasts any data
+     received through any connection to all the other clients and servers con‐
+     nected to netkitty

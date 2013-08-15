@@ -1,5 +1,5 @@
 NetKitty Tutorial
-Copyright (c) 2006, 2007, 2008, 2009, 2010
+Copyright (c) 2006, 2007, 2008, 2009, 2010, 2013
               David Martínez Oliveira
 See the end of the file for license conditions.
 ================================================================
@@ -101,6 +101,18 @@ If you don't want to code all the bluetooth socket stuff in your sensor systems 
 data-app | nk -client B,30:F2:61:CE:B2:A3,4
 
 And we are done. 
+
+Serial Port
+-----------
+NetKitty supports access to standard serial ports effectively enabling the communication with different devices and easily network access to them. The example below shows how to use NetKitty to access a serial device (8N1 -this is default for nk- and 9600 bauds)
+
+nk -c S,/dev/ttyUSB1,9600
+
+The next command supports an arbitrary number of network devices to connect to port 5000 and acquire any date sent by any device attached to a serial port.
+
+nk -hub -s T,5000 -c S,/dev/ttyUSB1,9600
+
+
 .
 This file is part of NetKitty
 

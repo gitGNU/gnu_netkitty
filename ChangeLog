@@ -1,3 +1,9 @@
+Thu Aug 15 16:34:45 CEST 2013
+	* Working in a new branch to support serial ports
+
+Thu Mar 14 07:04:02 CET 2013
+	* Added man page and inital debianization
+
 Thu Sep  8 06:38:39 CEST 2011
 	* Try to fix problem managing client reconections
 

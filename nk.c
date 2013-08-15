@@ -1,6 +1,6 @@
 /* 
 NetKitty: Generic Multi Server
-Copyright (c) 2006, 2007, 2008, 2009, 2010, 2011
+Copyright (c) 2006, 2007, 2008, 2009, 2010, 2011, 2013
 	      David Martínez Oliveira
 
 This file is part of NetKitty
@@ -30,6 +30,7 @@ along with NetKitty.  If not, see <http://www.gnu.org/licenses/>.
 #include <signal.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <termios.h>
 
 /* Network Specific */
 #include <sys/types.h>
@@ -63,11 +64,12 @@ struct sockaddr_rc {
   uint8_t         rc_channel;
 };
 
-#define VERSION         "01.07.3-RSO"
+#define VERSION         "01.08.1-Alpha"
 /* Programa Constants & Macros -----------------------------*/
 #define T_UDP           SOCK_DGRAM
 #define T_TCP           SOCK_STREAM
 #define T_BT            1000
+#define T_SE            1001
 #define INOUT_CLIENT    0
 #define BUFSIZE         2048
 /* FIXME: Static Array for UDP connections */
@@ -86,11 +88,49 @@ static int   *sport_type = NULL, n_port_types = 0;
 static int   *s_accept = NULL, n_ports = 0;
 /* Real communication sockets */
 static int   *s_comm = NULL, n_comm = 0;
+static char  *prg = NULL;
+static int   ex = 0;
 
 /* UDP lazy management */
 static int                 udp_sender = -1; /* Use any UDP server for sending */
 static struct sockaddr_in  uclient[NPORTS];  /* Store any UDP access */
 static int                 n_uclient = 0;
+
+/* Serial Port Functions ***************************/
+int 
+serialport_init (char* port, int speed) {
+  struct termios tio;
+  speed_t        _speed = B9600;
+  int            fd = -1;
+  
+  memset (&tio, 0, sizeof(tio));
+  tio.c_iflag     = 0;
+  tio.c_oflag     = 0;
+  tio.c_cflag     = CS8|CREAD|CLOCAL; /* 8n1 */
+  tio.c_lflag     = 0;
+  tio.c_cc[VMIN]  = 1;
+  tio.c_cc[VTIME] = 5;
+  
+  fd = open (port, O_RDWR | O_NONBLOCK);      
+  
+  switch (speed)
+    {
+    case 4800:   _speed = B4800;   break;
+    case 9600:   _speed = B9600;   break;
+    case 19200:  _speed = B19200;  break;
+    case 38400:  _speed = B38400;  break;
+    case 57600:  _speed = B57600;  break;
+    case 115200: _speed = B115200; break;
+    }
+
+  cfsetospeed (&tio,_speed);
+  cfsetispeed (&tio,_speed);
+ 
+  tcflush (fd, TCIFLUSH);
+  tcsetattr (fd,TCSANOW,&tio);
+
+  return fd;
+}
 
 /* Bluetooth Functions *****************************/
 void baswap(bdaddr_t *dst, const bdaddr_t *src) {
@@ -121,7 +161,7 @@ int str2ba(const char *str, bdaddr_t *ba) {
 int my_print (char *str) {return write (1, str, strlen (str));}
 
 /* Execute an external command its stdin/stdout/stderr the actual socket */
-int procesa ( int s , char *prg )
+int procesa ( int s )
 {
   pid_t pid ;
   char *name[3] ;
@@ -136,7 +176,8 @@ int procesa ( int s , char *prg )
 	  dup2 (s, 0);
 	  dup2 (s, 1);
 	  dup2 (s, 2);
-	  name[0] = "/bin/bash";
+	  //name[0] = "/bin/bash";
+	  name[0] = strdup (prg);
 	  name[1] = "-i";
 	  name[2] = NULL;
 	  execv (name[0], name );
@@ -224,6 +265,12 @@ int create_initial_socket (char *ip, char *port, int type1, int inout)
     i = (inout) ? listen ((*list)[j], 10) : 
       connect ((*list)[j], (struct sockaddr*)g_addr, g_len);
 
+  if (ex)
+    {
+      procesa ((*list)[j]);
+      (*list)[j] = -1;
+    }
+
   /* use any UDP socket as default sender*/
   if ((udp_sender == -1) && (type == T_UDP) && inout) 
     udp_sender = j; 
@@ -245,7 +292,8 @@ int hub_send (int ex_tcp, int ex_udp, char *buffer, int len)
   /* Send data to TCP clients*/
   for (k = 0; k < n_comm; k++)
     if (ex_tcp != k) 
-      if (send (s_comm[k], buffer, len, 0) < 0) 
+      //if (send (s_comm[k], buffer, len, 0) < 0) 
+      if (write (s_comm[k], buffer, len) < 0) 
 	perror ("TCP send:");
     /* Send data to UDP clients */
   if (udp_sender)
@@ -286,8 +334,8 @@ int main (int argc, char *argv[])
   if (argc == 1)
     {
       my_print ("NetKitty Version " VERSION "\n");
-      my_print ("(c) 2006,2007,2008,2009,2010,2011. David Martinez Oliveira\n\n");
-      my_print ("Usage: nk [-shell] [-hub] [-os] [-client ((T|U|B),(ip|bt),port)+] "
+      my_print ("(c) 2006,2007,2008,2009,2010,2011,2013. David Martinez Oliveira\n\n");
+      my_print ("Usage: nk [-shell] [-hub] [-os] [-client ((T|U|B|S),(ip|bt|serial),(port|baud))+] "
 		"[-server ((T|U|B),port)+]\n\n");
       exit (1);
     }
@@ -311,6 +359,14 @@ int main (int argc, char *argv[])
 	{
 	  write (1, "WARNNING: Running in shell\n", 27);
 	  shell = 1;
+	  prg = strdup ("/bin/bash");
+	  continue;
+	}
+      if ((strncmp (argv[i], "-exec", 6) == 0) || (strncmp (argv[i], "-e", 2) == 0))
+	{
+	  ex = 1;
+	  i++;
+	  prg = strdup (argv[i]);
 	  continue;
 	}
       if ((strncmp (argv[i], "-client", 7) == 0) || (strncmp (argv[i], "-c", 2) == 0))
@@ -338,6 +394,10 @@ int main (int argc, char *argv[])
 	case 'B':
 	  type = T_BT;
 	  break;
+	case 'S':
+	  type = T_SE;
+	  arg_flag = 3;
+	  break;
 	}
       aux += 2;
       switch (arg_flag)
@@ -350,6 +410,13 @@ int main (int argc, char *argv[])
 	case 2:
 	  PDEBUG ("Accepting '%s' (%d)\n", aux, type);
 	  create_initial_socket (NULL, aux, type, INOUT_CLIENT + 1);
+	  break;
+	case 3:
+	  *(aux1 = strchr (aux, ',')) = 0;
+	  PDEBUG ("Opening '%s':'%s' (%d)\n", aux, aux1 + 1, type);
+	  int index = add_handler (&s_comm, &n_comm);
+	  s_comm[j] = serialport_init (aux, atoi(aux1+1));
+	  break;
 	default:
 	  break;
 	}      
@@ -396,7 +463,7 @@ int main (int argc, char *argv[])
 		  /* XXX: Piped mode we got file descriptor active 
 		     but no data is available*/
 		  loop4ever = 0;
-		  write (1, "DONE!!!\n", 8);
+		  //write (1, "DONE!!!\n", 8);
 		  continue;
 		}
 	      PDEBUG ("stdin data available... read %d bytes\n", ilen);
@@ -413,7 +480,8 @@ int main (int argc, char *argv[])
 		  if (s_comm[i] == -1) continue;
 		  if (FD_ISSET(s_comm[i], &rfds))
 		    {
-		      if ((len = recv (s_comm[i], buffer, BUFSIZE, 0)) <= 0)
+		      //if ((len = recv (s_comm[i], buffer, BUFSIZE, 0)) <= 0)
+		      if ((len = read (s_comm[i], buffer, BUFSIZE)) <= 0)
 			{
 			  PDEBUG ("0 bytes read.... removing socket\n");
 			  s_comm[i] = -1;
@@ -426,7 +494,8 @@ int main (int argc, char *argv[])
 		      if (hub) hub_send (i, -1, buffer, len);
 		    }		  
 		  if (ilen) 
-		    if (send (s_comm[i], ibuffer, ilen, 0) < 0)
+		    //if (send (s_comm[i], ibuffer, ilen, 0) < 0)
+		    if (write (s_comm[i], ibuffer, ilen) < 0)
 		      {
 			close (s_comm[i]);
 			s_comm[i] = -1;
@@ -449,7 +518,8 @@ int main (int argc, char *argv[])
 			  PDEBUG ("Connection accepted for channel %d\n", j);
 			  if(shell) 
 			    {
-			      procesa (s_comm[j], NULL);
+			      //procesa (s_comm[j], NULL);
+			      procesa (s_comm[j]);
 			      s_comm[j] = -1;
 			    }
 			}

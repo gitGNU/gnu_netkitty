@@ -1,5 +1,5 @@
 # NetKitty: Generic Multi Server
-# Copyright (c) 2006, 2007, 2008, 2009, 2010
+# Copyright (c) 2006, 2007, 2008, 2009, 2010, 2013
 # 	        David Martínez Oliveira
 # This file is part of NetKitty
 #
@@ -18,12 +18,19 @@
 #
 
 DIET_CFLAGS=-falign-functions=0 -fdata-sections -ffunction-sections -Wl,--gc-sections -Os -fno-stack-protector
-CFLAGS=-Wall -falign-functions=0 -fdata-sections -ffunction-sections -Wl,--gc-sections -Os -fno-stack-protector
+CFLAGS=-falign-functions=0 -fdata-sections -ffunction-sections -Wl,--gc-sections -Os -fno-stack-protector
+
+prefix = /usr/local
+bindir = $(prefix)/bin
+sharedir = $(prefix)/share
+mandir = $(sharedir)/man
+man1dir = $(mandir)/man1
+
 
 all: nk
 
 nk: nk.c
-	${CC} ${CFLAGS} -o $@ $<
+	gcc ${CFLAGS} -o $@ $<
 	strip -s $@
 
 .PHONY:
@@ -31,5 +38,9 @@ small: nk.c
 	diet -Os gcc ${DIET_CFLAGS} -o nk-diet nk.c 
 	strip -s nk-diet
 
+install: all
+	install nk $(DESTDIR)$(bindir)
+	install -m 0644 nk.1.gz $(DESTDIR)$(man1dir)
+	
 clean:
-	rm nk nk-diet
+	rm -f nk nk-diet
