@@ -64,7 +64,7 @@ struct sockaddr_rc {
   uint8_t         rc_channel;
 };
 
-#define VERSION         "01.08.1-Alpha"
+#define VERSION         "01.08.1"
 /* Programa Constants & Macros -----------------------------*/
 #define T_UDP           SOCK_DGRAM
 #define T_TCP           SOCK_STREAM
