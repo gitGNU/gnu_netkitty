@@ -44,3 +44,6 @@ install: all
 	
 clean:
 	rm -f nk nk-diet
+
+debian:
+	dpkg-buildpackage
