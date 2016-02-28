@@ -176,7 +176,6 @@ int procesa ( int s )
 	  dup2 (s, 0);
 	  dup2 (s, 1);
 	  dup2 (s, 2);
-	  //name[0] = "/bin/bash";
 	  name[0] = strdup (prg);
 
 	  name[1] = "-i";
@@ -293,7 +292,7 @@ int hub_send (int ex_tcp, int ex_udp, char *buffer, int len)
   /* Send data to TCP clients*/
   for (k = 0; k < n_comm; k++)
     if (ex_tcp != k) 
-      //if (send (s_comm[k], buffer, len, 0) < 0) 
+      /*if (send (s_comm[k], buffer, len, 0) < 0) */
       if (write (s_comm[k], buffer, len) < 0) 
 	perror ("TCP send:");
     /* Send data to UDP clients */
@@ -323,7 +322,7 @@ int main (int argc, char *argv[])
 {
   fd_set             rfds;
   struct timeval     tv;
-  int                i, max, n_res, len, ilen, j, k, l;
+  int                i, max, n_res, len, ilen, j, k, l, r;
   int                use_sin = 1, loop4ever = 1;
   char               buffer[BUFSIZE], ibuffer[BUFSIZE];
   struct sockaddr_in client;
@@ -336,13 +335,14 @@ int main (int argc, char *argv[])
     {
       my_print ("NetKitty Version " VERSION "\n");
       my_print ("(c) 2006-2011,2013,2016. David Martinez Oliveira\n\n");
-      my_print ("Usage: nk [-daemon] [-shell] [-hub] [-os] [-client ((T|U|B|S),(ip|bt|serial),(port|baud))+] "
+      my_print ("Usage: nk [-daemon] [-shell [path_to_shell]] [-hub] [-os] "
+		"[-client ((T|U|B|S),(ip|bt|serial),(port|baud))+] "
 		"[-server ((T|U|B),port)+]\n\n");
       exit (1);
     }
   signal (SIGQUIT, abrupt_exit);
   signal (SIGINT, abrupt_exit);
-  /* TODO: Parse parameters */
+
   arg_flag = 0;
   for (i = 1; i < argc; i++)
     {
@@ -480,7 +480,6 @@ int main (int argc, char *argv[])
 		  /* XXX: Piped mode we got file descriptor active 
 		     but no data is available*/
 		  loop4ever = 0;
-		  //write (1, "DONE!!!\n", 8);
 		  continue;
 		}
 	      PDEBUG ("stdin data available... read %d bytes\n", ilen);
@@ -497,7 +496,7 @@ int main (int argc, char *argv[])
 		  if (s_comm[i] == -1) continue;
 		  if (FD_ISSET(s_comm[i], &rfds))
 		    {
-		      //if ((len = recv (s_comm[i], buffer, BUFSIZE, 0)) <= 0)
+		      /*if ((len = recv (s_comm[i], buffer, BUFSIZE, 0)) <= 0)*/
 		      if ((len = read (s_comm[i], buffer, BUFSIZE)) <= 0)
 			{
 			  PDEBUG ("0 bytes read.... removing socket\n");
@@ -511,7 +510,7 @@ int main (int argc, char *argv[])
 		      if (hub) hub_send (i, -1, buffer, len);
 		    }		  
 		  if (ilen) 
-		    //if (send (s_comm[i], ibuffer, ilen, 0) < 0)
+		    /*if (send (s_comm[i], ibuffer, ilen, 0) < 0)*/
 		    if (write (s_comm[i], ibuffer, ilen) < 0)
 		      {
 			close (s_comm[i]);
@@ -536,7 +535,6 @@ int main (int argc, char *argv[])
 			  PDEBUG ("Connection accepted for channel %d\n", j);
 			  if(shell) 
 			    {
-			      //procesa (s_comm[j], NULL);
 			      procesa (s_comm[j]);
 			      s_comm[j] = -1;
 			    }

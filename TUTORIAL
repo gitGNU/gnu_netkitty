@@ -1,5 +1,5 @@
 NetKitty Tutorial
-Copyright (c) 2006, 2007, 2008, 2009, 2010, 2013
+Copyright (c) 2006, 2007, 2008, 2009, 2010, 2013, 2016
               David Martínez Oliveira
 See the end of the file for license conditions.
 ================================================================
@@ -9,8 +9,7 @@ Basic Usage
 -----------
 The basic usage of NetKitty is really simple. The command syntax is as follows:
 
-nk [-hub] [-shell] [-os] [-client [T|U|B],address,port] [-server [T|U|B],port]
-
+nk [-hub] [-shell [shell_to_run]] [-os] [-client (([T|U|B|S]),(ip|bt|serial), (port|baud))*] [-server ((T|U|B),port)*]
 where:
 
     * -hub: Activates the hub mode (see below).
@@ -25,8 +24,9 @@ Specific parameters for clients and servers are specified below:
           o T : Uses TCP for connect/accept communications
           o U : Uses UDP for connect/accept communications
           o B : Uses Bluetooth rfcom for connect/accept communications
-    * Address. Will take the form of an IP address (x.x.x.x) or a Bluetooth address (XX:XX:XX:XX:XX:XX) if B was specified, where x represents decimal numbers and XX hexadecimal ones.
-    * Port. This is the TCP, UDP communication port or the Bluetooth channel is the B option was used.
+	  o S : Uses Serial Port to interchange information
+    * ip|bt|serial. Will take the form of an IP address (x.x.x.x), a Bluetooth address (XX:XX:XX:XX:XX:XX) if B was specified, where x represents decimal numbers and XX hexadecimal ones, or a GNU/Linux Serial port (/dev/ttyXX)
+    * port|baud. This is the TCP, UDP communication port, the Bluetooth channel is the B option was used or the serial port speed in bauds.
 
 In the rest of this text some examples on how to use nk are show.
 
@@ -54,9 +54,32 @@ The -shell flags instructs NetKitty to start an interactive shell (/bin/sh -i), 
 
 A simple example, providing shell access to a given device either using a normal TCP connection or a bluetooth link:
 
-nk -shell -server T,5000 B,5
+$ nk -shell -server T,5000 B,5
 
 From this point on, any connection to TCP port 5000 or any Bluetooth connection through channel 5, will provide a rudimentary shell to any client.
+
+The -shell flag executes /bin/sh by default. In case a different shell is required, it can be specified just after the flag. For instance, the command below runs the default Android Shell in a Android devices and waits for TCP connections  on port 5000. The example also uses the short flags format.
+
+$ nk -sh /system/bin/sh -s T,5000
+
+
+Multi-Hop Shell
+-------------------
+It is possible to chain multiple machines to get shell access to a destination box. The commands required are shown below.
+
+In the destination machine a server with shell access is executed in hub mode. ,p/>
+
+$ nk -hub -shell -s T,5002
+
+In the intermediate machines a proxy configuration is used:
+
+$ nk -s -hub  T,5001 -c T,127.0.0.1,5002
+
+Then on the source machine a normal TCP client is executed against the first machine in the chain:
+
+$ nk -c T,127.0.0.1,5001
+
+NOTE: The ports in the examples above are just examples. Any port can be used. 
 
 Network Distributor
 -------------------
@@ -66,7 +89,7 @@ In order to illustrate our example, a real live example will be taken. Suppose t
 
 Now, we want to control two different simulation engines from the same optical tracking system, so we use nk for this task. In the machine running the optical tracking system we launch nk with this line:
 
-nk -hub -server T,10000 -client T,ip_server1,10000 T,ip_server2,10000
+$ nk -hub -server T,10000 -client T,ip_server1,10000 T,ip_server2,10000
 
 Now we only need to configure our tracking system to send data to a "virtual" simulation engine running in localhost (127.0.0.1:10000).
 
@@ -78,11 +101,11 @@ So, in order to perform a backup, The following commands should be used.
 
 In the machine where the backup will be stored run:
 
-nk -os -server -T,10000 > raw_data.dat
+$ nk -os -server -T,10000 > raw_data.dat
 
 In the machine you want to backup run:
 
-cat whatever | nk -client T,the_ip,10000
+$ cat whatever | nk -client T,the_ip,10000
 
 That's all.
 
@@ -112,6 +135,7 @@ The next command supports an arbitrary number of network devices to connect to p
 
 nk -hub -s T,5000 -c S,/dev/ttyUSB1,9600
 
+NOTE: NetKitty uses a 8:N:1 standard configuration for the serial port. That is the most common configuration and in order to keep nk small no option had been provided to support other configurations. 
 
 .
 This file is part of NetKitty
