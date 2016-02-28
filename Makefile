@@ -1,5 +1,5 @@
 # NetKitty: Generic Multi Server
-# Copyright (c) 2006, 2007, 2008, 2009, 2010, 2013
+# Copyright (c) 2006, 2007, 2008, 2009, 2010, 2013, 2016
 # 	        David Martínez Oliveira
 # This file is part of NetKitty
 #
@@ -17,7 +17,7 @@
 # along with NetKitty.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-DIET_CFLAGS=-falign-functions=0 -fdata-sections -ffunction-sections -Wl,--gc-sections -Os -fno-stack-protector
+DIET_CFLAGS=-falign-functions=0 -fdata-sections -ffunction-sections -Wl,--gc-sections -Os -fno-stack-protector -lcompat
 CFLAGS=-falign-functions=0 -fdata-sections -ffunction-sections -Wl,--gc-sections -Os -fno-stack-protector
 
 prefix = /usr/local

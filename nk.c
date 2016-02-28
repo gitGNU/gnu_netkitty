@@ -1,6 +1,6 @@
 /* 
 NetKitty: Generic Multi Server
-Copyright (c) 2006, 2007, 2008, 2009, 2010, 2011, 2013
+Copyright (c) 2006, 2007, 2008, 2009, 2010, 2011, 2013, 2016
 	      David Martínez Oliveira
 
 This file is part of NetKitty
@@ -64,7 +64,7 @@ struct sockaddr_rc {
   uint8_t         rc_channel;
 };
 
-#define VERSION         "01.08.1"
+#define VERSION         "01.09.1"
 /* Programa Constants & Macros -----------------------------*/
 #define T_UDP           SOCK_DGRAM
 #define T_TCP           SOCK_STREAM
@@ -89,7 +89,7 @@ static int   *s_accept = NULL, n_ports = 0;
 /* Real communication sockets */
 static int   *s_comm = NULL, n_comm = 0;
 static char  *prg = NULL;
-static int   ex = 0;
+static int   ex = 0, _daemon = 0;
 
 /* UDP lazy management */
 static int                 udp_sender = -1; /* Use any UDP server for sending */
@@ -165,7 +165,7 @@ int procesa ( int s )
 {
   pid_t pid ;
   char *name[3] ;
-  
+
   if ((pid = fork ()) < 0)
     write (2, "Cannot create process\n", 22);
   else
@@ -178,6 +178,7 @@ int procesa ( int s )
 	  dup2 (s, 2);
 	  //name[0] = "/bin/bash";
 	  name[0] = strdup (prg);
+
 	  name[1] = "-i";
 	  name[2] = NULL;
 	  execv (name[0], name );
@@ -334,8 +335,8 @@ int main (int argc, char *argv[])
   if (argc == 1)
     {
       my_print ("NetKitty Version " VERSION "\n");
-      my_print ("(c) 2006,2007,2008,2009,2010,2011,2013. David Martinez Oliveira\n\n");
-      my_print ("Usage: nk [-shell] [-hub] [-os] [-client ((T|U|B|S),(ip|bt|serial),(port|baud))+] "
+      my_print ("(c) 2006-2011,2013,2016. David Martinez Oliveira\n\n");
+      my_print ("Usage: nk [-daemon] [-shell] [-hub] [-os] [-client ((T|U|B|S),(ip|bt|serial),(port|baud))+] "
 		"[-server ((T|U|B),port)+]\n\n");
       exit (1);
     }
@@ -359,10 +360,26 @@ int main (int argc, char *argv[])
 	{
 	  write (1, "WARNNING: Running in shell\n", 27);
 	  shell = 1;
-	  prg = strdup ("/bin/bash");
+	  if (argv[i+1] && argv[i+1][0] == '-') 
+	    {
+	      prg = strdup ("/bin/sh");
+	      continue;
+	    }
+	  
+	  i++;
+	  prg = strdup (argv[i]);
+
 	  continue;
 	}
-      if ((strncmp (argv[i], "-exec", 6) == 0) || (strncmp (argv[i], "-e", 2) == 0))
+      if ((strncmp (argv[i], "-daemon", 7) == 0) || (strncmp (argv[i], "-d", 2) == 0))
+	{
+	  _daemon = 1;
+	  use_sin = 0;
+	  daemon (0, 1);
+	  continue;
+	}
+      /* XXX: To be removed??? */
+      if ((strncmp (argv[i], "-exec", 5) == 0) || (strncmp (argv[i], "-e", 2) == 0))
 	{
 	  ex = 1;
 	  i++;
@@ -453,7 +470,7 @@ int main (int argc, char *argv[])
       else
 	{
 	  /* Check stdin data */
-	  if (FD_ISSET(0, &rfds))
+	  if (!_daemon && FD_ISSET(0, &rfds))
 	    {
 	      PDEBUG ("stdin data available... read %d bytes\n", ilen);
 	      /* Get stdin data to send to all clients */
@@ -489,7 +506,7 @@ int main (int argc, char *argv[])
 			}
 		      PDEBUG ("Read %d bytes from TCP stream\n", len);
 		      buffer[len] = 0; 
-		      write (1, buffer, len);
+		      if (!_daemon) write (1, buffer, len);
 		      /* Send to each connected socket*/
 		      if (hub) hub_send (i, -1, buffer, len);
 		    }		  
@@ -512,9 +529,10 @@ int main (int argc, char *argv[])
 		      if (sport_type[i] == T_TCP)
 			{
 			  j = add_handler (&s_comm, &n_comm);
-			  use_sin = s_comm[j] = 
+			  s_comm[j] = 
 			    accept (s_accept[i], (struct sockaddr*) &client, 
 				    &sa_len);
+			  if (!_daemon) use_sin = s_comm[j];
 			  PDEBUG ("Connection accepted for channel %d\n", j);
 			  if(shell) 
 			    {
@@ -529,7 +547,7 @@ int main (int argc, char *argv[])
 			  len = recvfrom (s_accept[i], buffer, BUFSIZE, 0, 
 					  (struct sockaddr*) &client, &sa_len);
 			  buffer[len] = 0;
-			  write (1, buffer, len);
+			  if (!_daemon) write (1, buffer, len);
 
 			  /* Check if client already exists */
 			  for (l = 0; l < n_uclient; l++)
