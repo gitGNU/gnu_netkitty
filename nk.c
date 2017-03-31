@@ -1,22 +1,22 @@
 /* 
-NetKitty: Generic Multi Server
-Copyright (c) 2006, 2007, 2008, 2009, 2010, 2011, 2013, 2016
-	      David Martínez Oliveira
-
-This file is part of NetKitty
-
-NetKitty is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-NetKitty is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with NetKitty.  If not, see <http://www.gnu.org/licenses/>.
+   NetKitty: Generic Multi Server
+   Copyright (c) 2006, 2007, 2008, 2009, 2010, 2011, 2013, 2016, 2017
+                 David Martínez Oliveira
+   
+   This file is part of NetKitty
+   
+   NetKitty is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   NetKitty is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with NetKitty.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /* General Includes */
@@ -36,6 +36,8 @@ along with NetKitty.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
@@ -64,12 +66,13 @@ struct sockaddr_rc {
   uint8_t         rc_channel;
 };
 
-#define VERSION         "01.09.1"
+#define VERSION         "01.10.1"
 /* Programa Constants & Macros -----------------------------*/
 #define T_UDP           SOCK_DGRAM
 #define T_TCP           SOCK_STREAM
 #define T_BT            1000
 #define T_SE            1001
+#define T_F            1002
 #define INOUT_CLIENT    0
 #define BUFSIZE         2048
 /* FIXME: Static Array for UDP connections */
@@ -90,6 +93,7 @@ static int   *s_accept = NULL, n_ports = 0;
 static int   *s_comm = NULL, n_comm = 0;
 static char  *prg = NULL;
 static int   ex = 0, _daemon = 0;
+static int   fdump = -1;
 
 /* UDP lazy management */
 static int                 udp_sender = -1; /* Use any UDP server for sending */
@@ -176,6 +180,7 @@ int procesa ( int s )
 	  dup2 (s, 0);
 	  dup2 (s, 1);
 	  dup2 (s, 2);
+	  //name[0] = "/bin/bash";
 	  name[0] = strdup (prg);
 
 	  name[1] = "-i";
@@ -292,7 +297,7 @@ int hub_send (int ex_tcp, int ex_udp, char *buffer, int len)
   /* Send data to TCP clients*/
   for (k = 0; k < n_comm; k++)
     if (ex_tcp != k) 
-      /*if (send (s_comm[k], buffer, len, 0) < 0) */
+      //if (send (s_comm[k], buffer, len, 0) < 0) 
       if (write (s_comm[k], buffer, len) < 0) 
 	perror ("TCP send:");
     /* Send data to UDP clients */
@@ -302,7 +307,7 @@ int hub_send (int ex_tcp, int ex_udp, char *buffer, int len)
 	if ((sendto (s_accept[udp_sender], buffer, len, 0, 
 		     (struct sockaddr*) &uclient[k], sa_len)) < 0)
 	  perror ("UDP send:");
-  
+  if (fdump) write (fdump, buffer, len);
   return 0;
 }
 
@@ -322,7 +327,7 @@ int main (int argc, char *argv[])
 {
   fd_set             rfds;
   struct timeval     tv;
-  int                i, max, n_res, len, ilen, j, k, l, r;
+  int                i, max, n_res, len, ilen, j, k, l;
   int                use_sin = 1, loop4ever = 1;
   char               buffer[BUFSIZE], ibuffer[BUFSIZE];
   struct sockaddr_in client;
@@ -334,15 +339,14 @@ int main (int argc, char *argv[])
   if (argc == 1)
     {
       my_print ("NetKitty Version " VERSION "\n");
-      my_print ("(c) 2006-2011,2013,2016. David Martinez Oliveira\n\n");
-      my_print ("Usage: nk [-daemon] [-shell [path_to_shell]] [-hub] [-os] "
-		"[-client ((T|U|B|S),(ip|bt|serial),(port|baud))+] "
-		"[-server ((T|U|B),port)+]\n\n");
+      my_print ("(c) 2006-2011,2013,2016,2017. David Martinez Oliveira\n\n");
+      my_print ("Usage: nk [-daemon] [-shell] [-hub] [-os] [-client ((T|U|B|S),(ip|bt|serial),(port|baud))+] "
+		"[-server ((T|U|B),port)+] [-f filename]\n\n");
       exit (1);
     }
   signal (SIGQUIT, abrupt_exit);
   signal (SIGINT, abrupt_exit);
-
+  /* TODO: Parse parameters */
   arg_flag = 0;
   for (i = 1; i < argc; i++)
     {
@@ -386,6 +390,17 @@ int main (int argc, char *argv[])
 	  prg = strdup (argv[i]);
 	  continue;
 	}
+      if ((strncmp (argv[i], "-file", 5) == 0) || (strncmp (argv[i], "-f", 2) == 0))
+	{
+	  i++;
+	  if ((fdump = open (argv[i], O_TRUNC | O_CREAT | O_WRONLY, 0777)) < 0)
+	    {
+	      perror ("open:");
+	      exit (1);
+	    }
+	  continue;
+	}
+
       if ((strncmp (argv[i], "-client", 7) == 0) || (strncmp (argv[i], "-c", 2) == 0))
 	{
 	  PDEBUG ("** Reading Client information\n");
@@ -480,6 +495,7 @@ int main (int argc, char *argv[])
 		  /* XXX: Piped mode we got file descriptor active 
 		     but no data is available*/
 		  loop4ever = 0;
+		  //write (1, "DONE!!!\n", 8);
 		  continue;
 		}
 	      PDEBUG ("stdin data available... read %d bytes\n", ilen);
@@ -496,7 +512,7 @@ int main (int argc, char *argv[])
 		  if (s_comm[i] == -1) continue;
 		  if (FD_ISSET(s_comm[i], &rfds))
 		    {
-		      /*if ((len = recv (s_comm[i], buffer, BUFSIZE, 0)) <= 0)*/
+		      //if ((len = recv (s_comm[i], buffer, BUFSIZE, 0)) <= 0)
 		      if ((len = read (s_comm[i], buffer, BUFSIZE)) <= 0)
 			{
 			  PDEBUG ("0 bytes read.... removing socket\n");
@@ -510,7 +526,7 @@ int main (int argc, char *argv[])
 		      if (hub) hub_send (i, -1, buffer, len);
 		    }		  
 		  if (ilen) 
-		    /*if (send (s_comm[i], ibuffer, ilen, 0) < 0)*/
+		    //if (send (s_comm[i], ibuffer, ilen, 0) < 0)
 		    if (write (s_comm[i], ibuffer, ilen) < 0)
 		      {
 			close (s_comm[i]);
@@ -535,6 +551,7 @@ int main (int argc, char *argv[])
 			  PDEBUG ("Connection accepted for channel %d\n", j);
 			  if(shell) 
 			    {
+			      //procesa (s_comm[j], NULL);
 			      procesa (s_comm[j]);
 			      s_comm[j] = -1;
 			    }
