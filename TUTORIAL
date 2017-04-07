@@ -9,7 +9,7 @@ Basic Usage
 -----------
 The basic usage of NetKitty is really simple. The command syntax is as follows:
 
-nk [-hub] [-shell [shell_to_run]] [-os] [-client (([T|U|B|S]),(ip|bt|serial), (port|baud))*] [-server ((T|U|B),port)*]
+nk [-hub] [-shell [shell_to_run]] [-os] [-client (([T|U|B|S]),(ip|bt|serial), (port|baud))*] [-server ((T|U|B),port)*] -f dump_file
 where:
 
     * -hub: Activates the hub mode (see below).
@@ -17,6 +17,7 @@ where:
     * -os: Terminates application when all the clients disconnect.
     * -client: Configures nk to connect to a remote system.
     * -server: Configures nk to accept connections from remote systems.
+    * -f: Dumps traffic to the specified file
 
 Specific parameters for clients and servers are specified below:
 
@@ -136,6 +137,30 @@ The next command supports an arbitrary number of network devices to connect to p
 nk -hub -s T,5000 -c S,/dev/ttyUSB1,9600
 
 NOTE: NetKitty uses a 8:N:1 standard configuration for the serial port. That is the most common configuration and in order to keep nk small no option had been provided to support other configurations. 
+
+Non-Interactive File Transfer 
+-----------------------------
+The -f flag enables file transfer when no interactive session is possible (for instance from a script). This is an example of file transfer:
+
+In the target machine we run:
+
+nk -hub -os -d -s T,5000 -f the_file
+
+Netkitty will run in daemon mode and we can close the current interactive session. Then on the source machine:
+
+cat the_file | nk -c T,rem_ip,5000
+
+Abusing the Shell
+-----------------
+The shell flag actually starts a process and duplicates stdin, stdout and stderr. This can be abused to write simple services. This is an example of a echo service:
+
+$ cat <<EOM > echo.pl
+> #!/usr/bin.perl
+> $|=1;while (1) {\$_=<>;print;}
+> EOM
+$ chmod +x echo.pl
+$ nk -sh ./echo.pl -s T,5000
+
 
 .
 This file is part of NetKitty

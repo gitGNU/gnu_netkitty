@@ -382,14 +382,6 @@ int main (int argc, char *argv[])
 	  daemon (0, 1);
 	  continue;
 	}
-      /* XXX: To be removed??? */
-      if ((strncmp (argv[i], "-exec", 5) == 0) || (strncmp (argv[i], "-e", 2) == 0))
-	{
-	  ex = 1;
-	  i++;
-	  prg = strdup (argv[i]);
-	  continue;
-	}
       if ((strncmp (argv[i], "-file", 5) == 0) || (strncmp (argv[i], "-f", 2) == 0))
 	{
 	  i++;

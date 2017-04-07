@@ -17,7 +17,8 @@
 # along with NetKitty.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-DIET_CFLAGS=-falign-functions=0 -fdata-sections -ffunction-sections -Wl,--gc-sections -Os -fno-stack-protector -lcompat
+DIET_CFLAGS=-falign-functions=0 -fdata-sections -ffunction-sections -Wl,--gc-sections -Os -fno-stack-protector 
+DIET_LIBS=-lcompat
 CFLAGS=-falign-functions=0 -fdata-sections -ffunction-sections -Wl,--gc-sections -Os -fno-stack-protector
 
 prefix = /usr/local
@@ -35,7 +36,7 @@ nk: nk.c
 
 .PHONY:
 small: nk.c
-	diet -Os gcc ${DIET_CFLAGS} -o nk-diet nk.c 
+	diet -Os gcc ${DIET_CFLAGS} -o nk-diet nk.c ${DIET_LIBS}
 	strip -s nk-diet
 
 install: all
